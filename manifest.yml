@@ -1,0 +1,8 @@
+# Note: Only the edge weights from i -> j where j > i will be used because graph is undirected
+# All edge weights from i -> i will be 0
+# Use weight -1 for disconnected nodes
+graph:
+  - [0, 2, 3, 3]
+  - [0, 0, 1, 2]
+  - [0, 0, 0, 1]
+  - [0, 0, 0, 0]
