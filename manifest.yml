@@ -1,8 +1,25 @@
 # Note: Only the edge weights from i -> j where j > i will be used because graph is undirected
 # All edge weights from i -> i will be 0
 # Use weight -1 for disconnected nodes
-graph:
-  - [0, 2, 3, 3]
-  - [0, 0, 1, 2]
-  - [0, 0, 0, 1]
-  - [0, 0, 0, 0]
+map:
+  edge_weights:
+    - [0, 2, -1, 3]
+    - [0, 0, 1, 2]
+    - [0, 0, 0, 1]
+    - [0, 0, 0, 0]
+
+  randomize_cargo_spawn_probability: yes
+
+  cargo_spawn_probability: [0, 0.0001, 0.0002, 0]
+  
+  randomize_chargers: yes
+  
+  number_of_random_chargers: 3
+
+  charger_nodes: [2, 3]
+
+vehicle:
+  num_vehicles: 2
+  battery_capacity: 300
+  time_for_complete_charge: 7200
+  vehicle_speed: 1
