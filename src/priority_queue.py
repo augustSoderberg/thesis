@@ -4,9 +4,9 @@ class PriorityQueue:
         self.capacity = capacity
         self.size = 0
 
-    def push(self, node, priority):
+    def push(self, id, priority):
         for i in range(self.size):
-            if self.heap[i].node == node:
+            if self.heap[i].id == id:
                 if priority < self.heap[i].priority:
                     self.heap[i].priority = priority
                     self.heapify_up(i)
@@ -15,7 +15,7 @@ class PriorityQueue:
                     return False
         if self.capacity <= self.size + 1:
             self.heap.append(None)
-        self.heap[self.size] = PriorityQueueElement(node, priority)
+        self.heap[self.size] = PriorityQueueElement(id, priority)
         self.heapify_up(self.size)
         self.size += 1
         return True
@@ -47,9 +47,15 @@ class PriorityQueue:
         rtn = self.heap[0]
         self.heap[0] = self.heap[self.size]
         self.heapify_down(0)
-        return (rtn.node, rtn.priority)
+        return (rtn.id, rtn.priority)
+    
+    def peek(self):
+        if self.size == 0:
+            return None
+        else:
+            return (self.heap[0].id, self.heap[0].priority)
 
 class PriorityQueueElement:
-    def __init__(self, node, priority):
+    def __init__(self, id, priority):
         self.priority = priority
-        self.node = node
+        self.id = id

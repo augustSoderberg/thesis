@@ -71,6 +71,9 @@ class Map:
                     adj_matrix[i][j] = weight
                     adj_matrix[j][i] = weight
         self.adj_matrix = adj_matrix
+        if len(self.adj_matrix) <= 1:
+            raise ValueError("Please define 2 or more nodes in 'manifest.yml. "
+                                "See 'example_manifest.yml' for formatting")
         if not self.is_fully_connected():
             raise ValueError("Graph is not connected. Please edit 'manifest.yml")
     
@@ -123,6 +126,16 @@ class Map:
             return (path, priority)
         else:
             raise ValueError("Graph is not connected. Please edit 'manifest.yml")
+
+    def spawn_cargo(self):
+        cargo_tasks = []
+        for i, rate in enumerate(self.cargo_spawning_rates):
+            if random.random() <= rate:
+                end = random.randrange(0, self.num_nodes)
+                while end == i:
+                    end = random.randrange(0, self.num_nodes)
+                cargo_tasks.append((i, end))
+        return cargo_tasks
     
     def get_from_yaml(self, manifest_dict, key):
         try:

@@ -12,14 +12,16 @@ map:
 
   cargo_spawn_probability: [0, 0.0001, 0.0002, 0]
   
-  randomize_chargers: yes
+  randomize_chargers: no
   
   number_of_random_chargers: 3
 
-  charger_nodes: [2, 3]
+  charger_nodes: [0]
 
 vehicle:
   num_vehicles: 2
-  battery_capacity: 300
+  battery_capacity: 25
   time_for_complete_charge: 7200
   vehicle_speed: 1
+
+total_runtime: 28800
