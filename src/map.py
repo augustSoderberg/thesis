@@ -1,8 +1,11 @@
 from priority_queue import PriorityQueue
 import random, yaml
 
+# If you choose to randomly create the task spawning probabilities--
+# this is the total probability of a task to spawn any given second.
 CARGO_SPAWNING_CONST = 0.003
 
+# This is the entire map the agents and tasks are operating on.
 class Map:
     def __init__(self, manifest):
         self.create_graph(manifest)
@@ -28,6 +31,7 @@ class Map:
         else:
             self.cargo_spawning_rates = self.get_from_yaml(yaml_graph, "cargo_spawn_probability")
 
+    #This is a factor for each node based on how likely it is for tasks to spawn near this node.
     def calculate_relative_spawning_probability(self):
         longest_path = max(self.routes.values(), key=lambda x:x[1])[1]
         relative_spawning_probs = [0] * self.num_nodes

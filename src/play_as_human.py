@@ -1,11 +1,27 @@
 from map import Map
 from agents_controller import AgentsController
-import yaml
+import graphviz, yaml
+
+# This creates and displays the graphviz graph
+def create_graph(complete_map):
+    dot = graphviz.Graph("Map")
+    for i in range(len(complete_map.adj_matrix)):
+        color = 'grey'
+        if complete_map.is_charging_node[i]:
+            color = 'green'
+        dot.node("{}".format(i), "Node: {}\nP: {}".format(i, complete_map.cargo_spawning_rates[i]), color='{}'.format(color))
+    for i, node in enumerate(complete_map.adj_matrix):
+        for j, weight in enumerate(node):
+            if j > i and weight > 0:
+                dot.edge("{}".format(i), "{}".format(j), label="{}".format(weight))
+    dot.format = 'svg'
+    dot.render(directory='doctest-output', view=True)
 
 if __name__ == '__main__':
     with open("manifest.yml", "r") as stream:
         manifest = yaml.safe_load(stream)
     map = Map(manifest)
+    create_graph(map)
     agents_controller = AgentsController(map, manifest)
     try:
         total_runtime = manifest['total_runtime']
@@ -13,13 +29,14 @@ if __name__ == '__main__':
         raise KeyError("Please define 'total_runtime' in 'manifest.yml'. "
                     "See 'example_manifest.yml' for formatting.") from e
     for time in range(total_runtime):
-        for agent in agents_controller.agents:
-            print("TIME:", time, "ID:", agent.id, "Loc:", agent.location, "Batt:", agent.range)
+        print("\nCurrent time: {} seconds out of {}.".format(time, total_runtime))
         new_tasks = map.spawn_cargo()
         prompts, candidates = agents_controller.tick(time, new_tasks)
         not_enough_agents = False
         for i, (prompt, candidate) in enumerate(zip(prompts, candidates)):
             if len(candidate) > 0:
+                for agent in candidate:
+                    print(agents_controller.get_agent_data_for_task(i, agent))
                 response = input(prompt.format(candidate))
                 valid, message = agents_controller.ack_task(response, i, time)
                 while not valid:
@@ -39,6 +56,6 @@ if __name__ == '__main__':
                 while not valid:
                     response = input(message)
                     valid, message = agents_controller.ack_charger(response, time, id)
-    print(agents_controller.total_waiting_time)
+    print("The total amount of time tasks waited was {} seconds".format(agents_controller.get_total_waiting_time(total_runtime)))
 
 

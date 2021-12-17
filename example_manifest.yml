@@ -1,0 +1,38 @@
+# Note: Only the edge weights from i -> j where j > i will be used because graph is undirected
+# All edge weights from i -> i will be 0
+# Use weight -1 for disconnected nodes
+map:
+  #Length of each edge in meters
+  edge_weights:
+    - [0, 20, -1, 30]
+    - [0, 0, 10, 20]
+    - [0, 0, 0, 10]
+    - [0, 0, 0, 0]
+
+  randomize_cargo_spawn_probability: yes
+  
+  # This only matters if 'randomize_cargo_spawn_probability' is set to 'no'
+  # These are the probability that a task will spawn at the given node each second
+  cargo_spawn_probability: [0, 0.001, 0.002, 0]
+  
+  randomize_chargers: yes
+  
+  number_of_random_chargers: 1
+
+  # This only matters if 'randomize_chargers' is set to 'no'
+  charger_nodes: [0]
+
+vehicle:
+  num_vehicles: 2
+
+  #Battery capacity is in meters
+  battery_capacity: 300
+
+  #Number of seconds to fully charge a dead battery
+  time_for_complete_charge: 7200
+
+  #Vehicle speed in meters / second
+  vehicle_speed: 1
+
+#Total number of seconds to run the simulation
+total_runtime: 14000
