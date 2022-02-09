@@ -1,5 +1,7 @@
 pip install pyyaml
 pip install graphviz
+pip3 install tensorforce
+pip3 install tensorflow
 You also need a native install of graphviz:
 Windows: Find the most recent graphviz exe installer online and install
 Mac: brew install graphviz
