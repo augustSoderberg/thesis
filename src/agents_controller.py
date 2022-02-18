@@ -27,15 +27,25 @@ class AgentsController:
 
     # This is called each second of the simulation
     def tick(self, time, new_tasks):
+        self.charge_agents()
+        self.complete_tasks(time)
+        self.get_candidates_for_tasks(time, new_tasks)
+        return (self.prompts, self.candidates)
+
+    def charge_agents(self):
         for agent in self.agents:
             if agent.is_charging:
                 agent.charge(self.charge_per_second)
+    
+    def complete_tasks(self, time):
         self.agents_to_dispatch = []
         while self.next_awake_agent.peek() is not None and self.next_awake_agent.peek()[1] <= time:
             agent = self.agents[self.next_awake_agent.pop()[0]]
             agent.arrive(self.map.is_charging_node)
             if not agent.is_charging:
                 self.agents_to_dispatch.append(agent.id)
+
+    def get_candidates_for_tasks(self, time, new_tasks):
         self.prompts = []
         self.candidates = []
         self.new_tasks = []
@@ -51,16 +61,19 @@ class AgentsController:
             self.candidates.append([agent.id for agent in self.agents if 
                     agent.can_go(self.map.is_charging_node, self.map.routes, start, end)])
             self.prompts.append("Please select from agents {} to complete delivery from node {} to node {}: ".format("{}", start, end))
-        return (self.prompts, self.candidates)
+
 
     # This is used to verify that the response was valid and dispatches the appropriate agent.
     def ack_task(self, id, index, time):
-        try:
-            valid_id = int(id)
-            if not valid_id in self.candidates[index]:
-                raise ValueError()
-        except ValueError:
-            return False, "Please enter a valid integer from the following: {}: "
+        if type(id) == str:
+            try:
+                valid_id = int(id)
+                if not valid_id in self.candidates[index]:
+                    raise ValueError()
+            except ValueError:
+                return False, "Please enter a valid integer from the following: {}: "
+        else:
+            valid_id = id
         agent = self.agents[valid_id]
         new_task = self.new_tasks[index]
         start, end = new_task
@@ -86,16 +99,23 @@ class AgentsController:
             except ValueError:
                 pass
 
-    def get_charging_prompts(self, id):
+    def get_charging_prompts(self, id, for_human=False):
         agent = self.agents[id]
-        prompt = "Agent {} is at node {} and has {} meters of range left. ".format(agent.id, agent.location, agent.range)
         self.curr_valid_chargers = [i for i in range(len(self.map.is_charging_node)) 
                     if self.map.is_charging_node[i] 
                     and agent.can_go(self.map.is_charging_node, self.map.routes, agent.location, i)]
-        for charger in self.curr_valid_chargers:
-            prompt += "Charger {} is {} meters away. ".format(charger, self.map.routes[(agent.location, charger)][1])
-        prompt += "Please select a charger from the following list: {} Or select -1 to not move to a charger: ".format(self.curr_valid_chargers)
-        return prompt
+        if for_human:
+            prompt = "Agent {} is at node {} and has {} meters of range left. ".format(agent.id, agent.location, agent.range)
+            for charger in self.curr_valid_chargers:
+                prompt += "Charger {} is {} meters away. ".format(charger, self.map.routes[(agent.location, charger)][1])
+            prompt += "Please select a charger from the following list: {} Or select -1 to not move to a charger: ".format(self.curr_valid_chargers)
+            return prompt
+        else:
+            candidates = {}
+            for charger in self.curr_valid_chargers:
+                candidates[self.map.routes[(agent.location, charger)][1]] = charger
+            return candidates
+
     
     # This is used to ensure the response was valid and sends an agent to charge.
     def ack_charger(self, response, time, id):
@@ -120,9 +140,9 @@ class AgentsController:
             self.total_waiting_time += time - start_time
         return self.total_waiting_time
     
-    def get_agent_data_for_task(self, index, id):
+    def get_agent_data_for_task(self, index, id, for_human=False):
         start, end = self.new_tasks[index]
-        return self.agents[id].get_data_for_task(start, end, self.map.routes)
+        return self.agents[id].get_data_for_task(start, end, self.map.routes, for_human=for_human)
             
     def get_from_yaml(self, manifest_dict, key):
         try:
@@ -180,11 +200,14 @@ class Agent:
         self.location = charger
         return (distance / self.speed) + time
 
-    def get_data_for_task(self, start, end, routes):
+    def get_data_for_task(self, start, end, routes, for_human=False):
         dist_to_start = routes[(self.location, start)][1]
         range_at_end = self.range - dist_to_start - routes[(start, end)][1]
-        return "Agent {} is at node {} which is {} meters away from the task and will have {} meters of range left after completeing the task" \
-            .format(self.id, self.location, dist_to_start, range_at_end)
+        if for_human:
+            return "Agent {} is at node {} which is {} meters away from the task and will have {} meters of range left after completeing the task" \
+                .format(self.id, self.location, dist_to_start, range_at_end)
+        else:
+            return {"id": self.id, "location": self.location, "dist_to_start": dist_to_start, "range_at_end": range_at_end}
 
     def charge(self, charge_per_second):
         self.range = self.range + charge_per_second

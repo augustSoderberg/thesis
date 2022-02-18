@@ -9,7 +9,7 @@ map:
     - [0, 0, 0, 10]
     - [0, 0, 0, 0]
 
-  randomize_cargo_spawn_probability: yes
+  randomize_cargo_spawn_probability: no
   
   # This only matters if 'randomize_cargo_spawn_probability' is set to 'no'
   cargo_spawn_probability: [0, 0.001, 0.002, 0]

@@ -36,7 +36,7 @@ if __name__ == '__main__':
         for i, (prompt, candidate) in enumerate(zip(prompts, candidates)):
             if len(candidate) > 0:
                 for agent in candidate:
-                    print(agents_controller.get_agent_data_for_task(i, agent))
+                    print(agents_controller.get_agent_data_for_task(i, agent, for_human=True))
                 response = input(prompt.format(candidate))
                 valid, message = agents_controller.ack_task(response, i, time)
                 while not valid:
@@ -49,7 +49,7 @@ if __name__ == '__main__':
             print("You have pending tasks without any agents of sufficient charge",
             "Please consider charging one of the following agents.")
         for id in agents_controller.agents_to_dispatch:
-            prompt = agents_controller.get_charging_prompts(id)
+            prompt = agents_controller.get_charging_prompts(id, for_human=True)
             if prompt is not None:
                 response = input(prompt)
                 valid, message = agents_controller.ack_charger(response, time, id)
