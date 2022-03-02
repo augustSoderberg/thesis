@@ -4,28 +4,34 @@
 map:
   #Length of each edge in meters
   edge_weights:
-    - [0, 20, -1, 30]
-    - [0, 0, 10, 20]
-    - [0, 0, 0, 10]
-    - [0, 0, 0, 0]
+    - [0, 50, 50, -1, -1, -1, -1, -1, -1, -1]
+    - [0, 0, -1, -1, 30, -1, -1, -1, -1, -1]
+    - [0, 0, 0, 20, -1, -1, -1, -1, -1, -1]
+    - [0, 0, 0, 0, 10, -1, -1, -1, -1, -1]
+    - [0, 0, 0, 0, 0, 10, -1, 10, -1, -1]
+    - [0, 0, 0, 0, 0, 0, -1, 15, -1, -1]
+    - [0, 0, 0, 0, 0, 0, 0, 40, -1, -1]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 30, -1]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 20]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
   randomize_cargo_spawn_probability: no
   
   # This only matters if 'randomize_cargo_spawn_probability' is set to 'no'
-  cargo_spawn_probability: [0, 0.001, 0.002, 0]
+  cargo_spawn_probability: [0, 0.001, 0, 0.0005, 0, 0.0005, 0, 0.001, 0, 0]
   
-  randomize_chargers: yes
+  randomize_chargers: no
   
-  number_of_random_chargers: 1
+  number_of_random_chargers: 2
 
   # This only matters if 'randomize_chargers' is set to 'no'
-  charger_nodes: [0]
+  charger_nodes: [4, 7]
 
 vehicle:
-  num_vehicles: 2
+  num_vehicles: 4
 
   #Battery capacity is in meters
-  battery_capacity: 300
+  battery_capacity: 6000
 
   #Number of seconds to fully charge a dead battery
   time_for_complete_charge: 7200
