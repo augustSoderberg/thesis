@@ -1,28 +1,15 @@
 from map import Map
 from agents_controller import AgentsController
+import random
 import yaml
 
 MIN_CHARGE_THRESHOLD_PERCENTAGE = 0.3
 
 def choose_agent_for_task(agents_data):
-    return min(agents_data, key = lambda x: x[1])[0]
+    return agents_data[random.randint(0, len(agents_data) - 1)][0]
 
 def handle_charging_decision(charger_data, charge_percentage):
-    closest_charger = -1
-    range_left = 0
-    highest_spawning_prob = -1
-    prob = 0
-    for node in charger_data:
-        if node[1] >= range_left and node[2]:
-            closest_charger = node[0]
-            range_left = node[1]
-        if node[3] >= prob:
-            highest_spawning_prob = node[0]
-            prob = node[3]
-    if charge_percentage > MIN_CHARGE_THRESHOLD_PERCENTAGE:
-        return highest_spawning_prob
-    else:
-        return closest_charger
+    return charger_data[random.randint(0, len(charger_data) - 1)][0]
 
 if __name__ == '__main__':
     times = []

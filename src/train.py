@@ -5,30 +5,36 @@ from map import Map
 from agents_controller import AgentsController
 import yaml
 
-MIN_CHARGE_THRESHOLD_PERCENTAGE = 0.3
 
-def handle_charging_decision(charger_data, charge_percentage):
-    if charge_percentage > MIN_CHARGE_THRESHOLD_PERCENTAGE:
-        return -1
-    else:
-        return charger_data[min(charger_data)]
+def handle_charging_decision(post_task, charger_data, episode_states, internals, episode_internals):
+    all_states = [[0, 0, 0]]*10
+    for data in charger_data:
+        all_states[data[0]] = data[1:]
+    episode_states.append(all_states)
+    episode_internals.append(internals)
+    weights, internals = post_task.act(states=all_states, internals = internals, independent=True)
+    return weights, internals, max(charger_data, key=lambda x: weights[x[0]])[0]
 
 def choose_vehicle_to_dispatch(dispatcher, states, episode_states, internals, episode_internals):
-    all_states = [-1]*4
+    all_states = [[-1, -1, 0, 0, 0]]*4
     for state in states:
-        all_states[state["id"]] = state["dist_to_start"]
+        all_states[state[0]] = state[1:]
     episode_states.append(all_states)
     episode_internals.append(internals)
     weights, internals = dispatcher.act(states=all_states, internals = internals, independent=True)
-    return weights, internals, max(states, key=lambda x: weights[x["id"]])["id"]
+    return weights, internals, max(states, key=lambda x: weights[x[0]])[0]
 
-def train(manifest, dispatcher):
+def train(manifest, dispatcher, post_task):
     waiting_times = []
-    for episode in range(3000):
+    for episode in range(25000):
         episode_states = list()
         episode_internals = list()
         episode_actions = list()
         episode_terminal = list()
+        post_episode_states = list()
+        post_episode_internals = list()
+        post_episode_actions = list()
+        post_episode_terminal = list()
         map = Map(manifest)
         agents_controller = AgentsController(map, manifest)
         try:
@@ -41,6 +47,7 @@ def train(manifest, dispatcher):
             new_tasks = map.spawn_cargo()
             _, candidates = agents_controller.tick(time, new_tasks)
             internals = dispatcher.initial_internals()
+            post_internals = post_task.initial_internals()
             terminal = False
             for i, candidate in enumerate(candidates):
                 if len(candidate) > 0:
@@ -54,19 +61,27 @@ def train(manifest, dispatcher):
             for id in agents_controller.agents_to_dispatch:
                 candidates = agents_controller.get_charging_prompts(id)
                 if candidates is not None:
-                    response = handle_charging_decision(candidates, agents_controller.agents[id].range / agents_controller.agents[id].max_range)
+                    post_actions, post_internals, response = handle_charging_decision(post_task, candidates, post_episode_states, post_internals, post_episode_internals)
+                    post_episode_actions.append(post_actions)
                     agents_controller.ack_charger(response, time, id)
-        episode_reward = [-1*agents_controller.get_total_waiting_time(total_runtime)] * len(episode_terminal)
-        if episode % 40 == 0:
+                    post_episode_terminal.append(terminal)
+        episode_reward = [1000/agents_controller.get_total_waiting_time(total_runtime)] * len(episode_terminal)
+        post_episode_reward = [1000/agents_controller.get_total_waiting_time(total_runtime)] * len(post_episode_terminal)
+        if episode % 100 == 0:
             waiting_times.append(agents_controller.get_total_waiting_time(total_runtime))
+            print(waiting_times[-1])
         episode_terminal[-1] = True
+        post_episode_terminal[-1] = True
         dispatcher.experience(states=episode_states, internals=episode_internals, actions=episode_actions, terminal=episode_terminal, reward=episode_reward)
+        post_task.experience(states=post_episode_states, internals=post_episode_internals, actions=post_episode_actions, terminal=post_episode_terminal, reward=post_episode_reward)
         dispatcher.update()
+        post_task.update()
     print(waiting_times)    
 
 
 if __name__ == '__main__':
     with open("manifest.yml", "r") as stream:
         manifest = yaml.safe_load(stream)
-    dispatcher = Agent.create(agent='ppo', max_episode_timesteps=manifest["total_runtime"], batch_size=1, states=dict(type='float', shape=(4,)), actions=dict(type='float', shape=(4,)))
-    train(manifest, dispatcher)
+    dispatcher = Agent.create(agent='ppo', max_episode_timesteps=manifest["total_runtime"], batch_size=1, states=dict(type='float', shape=(4,5)), actions=dict(type='float', shape=(4,)))
+    post_task = Agent.create(agent='ppo', max_episode_timesteps=manifest["total_runtime"], batch_size=1, states=dict(type='float', shape=(10,3)), actions=dict(type='float', shape=(10,)))
+    train(manifest, dispatcher, post_task)

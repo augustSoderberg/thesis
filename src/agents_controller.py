@@ -42,7 +42,7 @@ class AgentsController:
         while self.next_awake_agent.peek() is not None and self.next_awake_agent.peek()[1] <= time:
             agent = self.agents[self.next_awake_agent.pop()[0]]
             agent.arrive(self.map.is_charging_node)
-            if not agent.is_charging:
+            if agent.should_be_dispatched:
                 self.agents_to_dispatch.append(agent.id)
 
     def get_candidates_for_tasks(self, time, new_tasks):
@@ -75,6 +75,7 @@ class AgentsController:
         else:
             valid_id = id
         agent = self.agents[valid_id]
+        agent.should_be_dispatched = True
         new_task = self.new_tasks[index]
         start, end = new_task
         task = self.get_pending_task(start, end)
@@ -101,19 +102,20 @@ class AgentsController:
 
     def get_charging_prompts(self, id, for_human=False):
         agent = self.agents[id]
-        self.curr_valid_chargers = [i for i in range(len(self.map.is_charging_node)) 
-                    if self.map.is_charging_node[i] 
-                    and agent.can_go(self.map.is_charging_node, self.map.routes, agent.location, i)]
+        agent.should_be_dispatched = False
+        self.curr_valid_nodes = [i for i in range(self.map.num_nodes) 
+                    if agent.can_go(self.map.is_charging_node, self.map.routes, agent.location, i)]
         if for_human:
             prompt = "Agent {} is at node {} and has {} meters of range left. ".format(agent.id, agent.location, agent.range)
-            for charger in self.curr_valid_chargers:
-                prompt += "Charger {} is {} meters away. ".format(charger, self.map.routes[(agent.location, charger)][1])
-            prompt += "Please select a charger from the following list: {} Or select -1 to not move to a charger: ".format(self.curr_valid_chargers)
+            prompt += "Please select a node from the following list to send the agent to: {}: ".format(self.curr_valid_nodes)
             return prompt
         else:
-            candidates = {}
-            for charger in self.curr_valid_chargers:
-                candidates[self.map.routes[(agent.location, charger)][1]] = charger
+            candidates = []
+            for node in self.curr_valid_nodes:
+                candidates.append([node, 
+                        agent.range - self.map.routes[(agent.location, node)][1], 
+                        int(self.map.is_charging_node[node]), 
+                        self.map.relative_spawning_probs[node]])
             return candidates
 
     
@@ -121,11 +123,11 @@ class AgentsController:
     def ack_charger(self, response, time, id):
         try:
             valid_node = int(response)
-            if not valid_node == -1 and not valid_node in self.curr_valid_chargers:
+            if not valid_node in self.curr_valid_nodes:
                 raise ValueError()
         except ValueError:
-            return False, "Please enter a valid integer from the following: {} Or -1 to not charge :".format(self.curr_valid_chargers)
-        if not valid_node == -1:
+            return False, "Please enter a valid integer from the following: {}".format(self.curr_valid_nodes)
+        if not valid_node == self.agents[id].location:
             self.next_awake_agent.push(id, self.agents[id].dispatch_charger(valid_node, self.map.routes, time))
         return True, ""
 
@@ -142,7 +144,7 @@ class AgentsController:
     
     def get_agent_data_for_task(self, index, id, for_human=False):
         start, end = self.new_tasks[index]
-        return self.agents[id].get_data_for_task(start, end, self.map.routes, for_human=for_human)
+        return self.agents[id].get_data_for_task(start, end, self.map.routes, self.map.relative_spawning_probs, for_human=for_human)
             
     def get_from_yaml(self, manifest_dict, key):
         try:
@@ -161,6 +163,7 @@ class Agent:
         self.available = True
         self.is_charging = False
         self.speed = speed
+        self.should_be_dispatched = False
 
     # Determines if an agent can take a task
     def can_go(self, is_charging_node, routes, start, end):
@@ -200,14 +203,19 @@ class Agent:
         self.location = charger
         return (distance / self.speed) + time
 
-    def get_data_for_task(self, start, end, routes, for_human=False):
+    def get_data_for_task(self, start, end, routes, spawning_probs, for_human=False):
         dist_to_start = routes[(self.location, start)][1]
         range_at_end = self.range - dist_to_start - routes[(start, end)][1]
         if for_human:
             return "Agent {} is at node {} which is {} meters away from the task and will have {} meters of range left after completeing the task" \
                 .format(self.id, self.location, dist_to_start, range_at_end)
         else:
-            return {"id": self.id, "location": self.location, "dist_to_start": dist_to_start, "range_at_end": range_at_end}
+            return [self.id, 
+                dist_to_start, 
+                range_at_end, 
+                int(self.is_charging), 
+                spawning_probs[self.location], 
+                spawning_probs[end]]
 
     def charge(self, charge_per_second):
         self.range = self.range + charge_per_second
