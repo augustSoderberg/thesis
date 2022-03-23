@@ -7,7 +7,7 @@ import yaml
 
 
 def handle_charging_decision(post_task, charger_data, episode_states, internals, episode_internals):
-    all_states = [[0, 0]]*10
+    all_states = [[0, 0]]*20
     for data in charger_data:
         all_states[data[0]] = data[1:3] + data[4:]
     episode_states.append(all_states)
@@ -16,7 +16,7 @@ def handle_charging_decision(post_task, charger_data, episode_states, internals,
     return weights, internals, max(charger_data, key=lambda x: weights[x[0]])[0]
 
 def choose_vehicle_to_dispatch(dispatcher, states, episode_states, internals, episode_internals):
-    all_states = [[-1, -1, 0, 0, 0]]*4
+    all_states = [[-1, -1, 0, 0, 0]]*8
     for state in states:
         all_states[state[0]] = state[1:]
     episode_states.append(all_states)
@@ -82,6 +82,6 @@ def train(manifest, dispatcher, post_task):
 if __name__ == '__main__':
     with open("manifest.yml", "r") as stream:
         manifest = yaml.safe_load(stream)
-    dispatcher = Agent.load(directory="models_disp", filename='agent-4')
-    post_task = Agent.load(directory="models_post", filename='agent-4')
+    dispatcher = Agent.load(directory="models_disp", filename='agent-28')
+    post_task = Agent.load(directory="models_post", filename='agent-28')
     train(manifest, dispatcher, post_task)

@@ -7,7 +7,7 @@ import yaml
 
 
 def handle_charging_decision(post_task, charger_data, episode_states, internals, episode_internals):
-    all_states = [[0, 0, 0]]*10
+    all_states = [[0, 0, 0]]*20
     for data in charger_data:
         all_states[data[0]] = data[1:3] + data[4:]
     episode_states.append(all_states)
@@ -16,7 +16,7 @@ def handle_charging_decision(post_task, charger_data, episode_states, internals,
     return weights, internals, max(charger_data, key=lambda x: weights[x[0]])[0]
 
 def choose_vehicle_to_dispatch(dispatcher, states, episode_states, internals, episode_internals):
-    all_states = [[-1, -1, 0, 0, 0]]*4
+    all_states = [[-1, -1, 0, 0, 0]]*8
     for state in states:
         all_states[state[0]] = state[1:]
     episode_states.append(all_states)
@@ -69,9 +69,9 @@ def train(manifest, dispatcher, post_task):
         post_episode_reward = [len(post_episode_terminal)/agents_controller.get_total_waiting_time(total_runtime)] * len(post_episode_terminal)
         if episode % 1 == 0:
             waiting_times.append(agents_controller.get_total_waiting_time(total_runtime))
-            if waiting_times[-1] < 400:
-                post_task.save("models_post")
-                dispatcher.save("models_disp")
+            # if waiting_times[-1] < 2800:
+                # post_task.save("models_post")
+                # dispatcher.save("models_disp")
             print(waiting_times[-1])
         episode_terminal[-1] = True
         post_episode_terminal[-1] = True
@@ -85,8 +85,8 @@ def train(manifest, dispatcher, post_task):
 if __name__ == '__main__':
     with open("manifest.yml", "r") as stream:
         manifest = yaml.safe_load(stream)
-    # dispatcher = Agent.create(agent='ppo', max_episode_timesteps=manifest["total_runtime"], batch_size=1, states=dict(type='float', shape=(4,5)), actions=dict(type='float', shape=(4,)))
-    # post_task = Agent.create(agent='ppo', max_episode_timesteps=manifest["total_runtime"], batch_size=1, states=dict(type='float', shape=(10,3)), actions=dict(type='float', shape=(10,)))
-    dispatcher = Agent.load(directory="models_disp", filename='agent-4', learning_rate=0.01)
-    post_task = Agent.load(directory="models_post", filename='agent-4', learning_rate=0.01)
+    # dispatcher = Agent.create(agent='ppo', max_episode_timesteps=manifest["total_runtime"], batch_size=1, states=dict(type='float', shape=(8,5)), actions=dict(type='float', shape=(8,)), learning_rate=0.01)
+    # post_task = Agent.create(agent='ppo', max_episode_timesteps=manifest["total_runtime"], batch_size=1, states=dict(type='float', shape=(20,3)), actions=dict(type='float', shape=(20,)), learning_rate=0.01)
+    dispatcher = Agent.load(directory="models_disp", filename='agent-28', learning_rate=0.001)
+    post_task = Agent.load(directory="models_post", filename='agent-28', learning_rate=0.001)
     train(manifest, dispatcher, post_task)
