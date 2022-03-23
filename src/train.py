@@ -7,9 +7,9 @@ import yaml
 
 
 def handle_charging_decision(post_task, charger_data, episode_states, internals, episode_internals):
-    all_states = [[0, 0]]*10
+    all_states = [[0, 0, 0]]*10
     for data in charger_data:
-        all_states[data[0]] = data[1:3]
+        all_states[data[0]] = data[1:3] + data[4:]
     episode_states.append(all_states)
     episode_internals.append(internals)
     weights, internals = post_task.act(states=all_states, internals = internals, independent=True)
@@ -85,7 +85,8 @@ def train(manifest, dispatcher, post_task):
 if __name__ == '__main__':
     with open("manifest.yml", "r") as stream:
         manifest = yaml.safe_load(stream)
-    dispatcher = Agent.load(directory="models_disp", filename='agent-20', learning_rate=0.0001)
-    post_task = Agent.load(directory="models_post", filename='agent-20', learning_rate=0.0001)
-    # print(dispatcher.get_specification())
+    # dispatcher = Agent.create(agent='ppo', max_episode_timesteps=manifest["total_runtime"], batch_size=1, states=dict(type='float', shape=(4,5)), actions=dict(type='float', shape=(4,)))
+    # post_task = Agent.create(agent='ppo', max_episode_timesteps=manifest["total_runtime"], batch_size=1, states=dict(type='float', shape=(10,3)), actions=dict(type='float', shape=(10,)))
+    dispatcher = Agent.load(directory="models_disp", filename='agent-4', learning_rate=0.01)
+    post_task = Agent.load(directory="models_post", filename='agent-4', learning_rate=0.01)
     train(manifest, dispatcher, post_task)

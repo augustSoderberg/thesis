@@ -115,7 +115,8 @@ class AgentsController:
                 candidates.append([node, 
                         agent.range - self.map.routes[(agent.location, node)][1], 
                         int(self.map.is_charging_node[node]), 
-                        self.map.relative_spawning_probs[node]])
+                        self.map.relative_spawning_probs[node],
+                        int(self.agent_at(node))])
             return candidates
 
     
@@ -145,6 +146,12 @@ class AgentsController:
     def get_agent_data_for_task(self, index, id, for_human=False):
         start, end = self.new_tasks[index]
         return self.agents[id].get_data_for_task(start, end, self.map.routes, self.map.relative_spawning_probs, for_human=for_human)
+
+    def agent_at(self, node):
+        for agent in self.agents:
+            if agent.location == node:
+                return True
+        return False
             
     def get_from_yaml(self, manifest_dict, key):
         try:
