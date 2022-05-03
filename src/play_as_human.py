@@ -15,24 +15,30 @@ def create_graph(complete_map):
             if j > i and weight > 0:
                 dot.edge("{}".format(i), "{}".format(j), label="{}".format(weight))
     dot.format = 'svg'
-    dot.render(directory='doctest-output', view=True)
+    dot.render(directory='visualized-maps', view=True)
 
 if __name__ == '__main__':
     with open("manifest.yml", "r") as stream:
         manifest = yaml.safe_load(stream)
+
     map = Map(manifest)
     create_graph(map)
     agents_controller = AgentsController(map, manifest)
+
     try:
         total_runtime = manifest['total_runtime']
     except KeyError as e:
         raise KeyError("Please define 'total_runtime' in 'manifest.yml'. "
                     "See 'example_manifest.yml' for formatting.") from e
+
     for time in range(total_runtime):
+
         print("\nCurrent time: {} seconds out of {}.".format(time, total_runtime))
+
         new_tasks = map.spawn_cargo()
         prompts, candidates = agents_controller.tick(time, new_tasks)
         not_enough_agents = False
+
         for i, (prompt, candidate) in enumerate(zip(prompts, candidates)):
             if len(candidate) > 0:
                 for agent in candidate:
@@ -45,9 +51,11 @@ if __name__ == '__main__':
             else:
                 not_enough_agents = True
                 agents_controller.handle_not_enough_agents()
+
         if not_enough_agents and len(agents_controller.agents_to_dispatch) > 0:
             print("You have pending tasks without any agents of sufficient charge",
             "Please consider charging one of the following agents.")
+
         for id in agents_controller.agents_to_dispatch:
             prompt = agents_controller.get_charging_prompts(id, for_human=True)
             if prompt is not None:
@@ -56,6 +64,7 @@ if __name__ == '__main__':
                 while not valid:
                     response = input(message)
                     valid, message = agents_controller.ack_charger(response, time, id)
+                    
     print("The total amount of time tasks waited was {} seconds".format(agents_controller.get_total_waiting_time(total_runtime)))
 
 

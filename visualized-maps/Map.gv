@@ -1,0 +1,33 @@
+graph Map {
+	0 [label="Node: 0
+P: 0" color=grey]
+	1 [label="Node: 1
+P: 0.001" color=grey]
+	2 [label="Node: 2
+P: 0" color=grey]
+	3 [label="Node: 3
+P: 0.0005" color=grey]
+	4 [label="Node: 4
+P: 0" color=green]
+	5 [label="Node: 5
+P: 0.0005" color=grey]
+	6 [label="Node: 6
+P: 0" color=grey]
+	7 [label="Node: 7
+P: 0.001" color=green]
+	8 [label="Node: 8
+P: 0" color=grey]
+	9 [label="Node: 9
+P: 0" color=grey]
+	0 -- 1 [label=50]
+	0 -- 2 [label=50]
+	1 -- 4 [label=30]
+	2 -- 3 [label=20]
+	3 -- 4 [label=10]
+	4 -- 5 [label=10]
+	4 -- 7 [label=10]
+	5 -- 7 [label=15]
+	6 -- 7 [label=40]
+	7 -- 8 [label=30]
+	8 -- 9 [label=20]
+}

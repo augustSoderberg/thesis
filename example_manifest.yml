@@ -30,7 +30,7 @@ map:
 vehicle:
   num_vehicles: 4
 
-  #Battery capacity is in meters
+  #Battery capacity is in meters of range
   battery_capacity: 6000
 
   #Number of seconds to fully charge a dead battery
